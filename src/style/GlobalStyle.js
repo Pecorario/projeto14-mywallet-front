@@ -1,7 +1,7 @@
-import { createGlobalStyle } from "styled-components";
+import { createGlobalStyle } from 'styled-components';
 
 const GlobalStyle = createGlobalStyle`
-    * {
+    *, div[aria-describedby*="notistack-snackbar"] {
         font-family: 'Raleway';
         font-style: normal;
         font-weight: 400;
@@ -53,6 +53,6 @@ const GlobalStyle = createGlobalStyle`
         text-decoration: none;
         padding-top: 30px;
     }
-`
+`;
 
-export default GlobalStyle
+export default GlobalStyle;
