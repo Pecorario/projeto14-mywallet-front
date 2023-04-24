@@ -5,6 +5,7 @@ import formatErrors from '../utils';
 import { useSnackbar } from 'notistack';
 import { useEffect, useState } from 'react';
 import api from '../services/api';
+import { useNavigate } from 'react-router-dom';
 
 export default function HomePage() {
   const [transactions, setTransactions] = useState([]);
@@ -12,18 +13,44 @@ export default function HomePage() {
   const [total, setTotal] = useState(0);
 
   const { enqueueSnackbar } = useSnackbar();
+  const navigate = useNavigate();
 
   async function handleLoadTransactions() {
     try {
       const { data } = await api.get('/transactions');
 
       const calcTotal = data.transactions.reduce((acc, obj) => {
-        return acc + obj.value;
+        if (obj.type === 'entrada') {
+          return acc + obj.value;
+        }
+        return acc - obj.value;
       }, 0);
 
       setUser(data.name);
       setTotal(calcTotal);
       setTransactions(data.transactions);
+    } catch (error) {
+      const errors = formatErrors(error);
+
+      errors.map(item =>
+        enqueueSnackbar(item, {
+          variant: 'error'
+        })
+      );
+    }
+  }
+
+  async function handleLogout() {
+    try {
+      await api.delete('/session');
+
+      localStorage.removeItem('token');
+
+      enqueueSnackbar('Deslogado com sucesso!', {
+        variant: 'success'
+      });
+
+      navigate('/');
     } catch (error) {
       const errors = formatErrors(error);
 
@@ -43,7 +70,7 @@ export default function HomePage() {
     <HomeContainer>
       <Header>
         <h1>Olá, {user}</h1>
-        <BiExit />
+        <BiExit onClick={handleLogout} />
       </Header>
 
       <TransactionsContainer>
@@ -65,7 +92,9 @@ export default function HomePage() {
 
         <article>
           <strong>Saldo</strong>
-          <Value color={'positivo'}>{total.toFixed(2).replace('.', ',')}</Value>
+          <Value color={total >= 0 ? 'positivo' : 'negativo'}>
+            {total.toFixed(2).replace('.', ',').replace('-', '')}
+          </Value>
         </article>
       </TransactionsContainer>
 
