@@ -1,16 +1,19 @@
-import styled from 'styled-components';
 import { BiExit } from 'react-icons/bi';
 import { AiOutlineMinusCircle, AiOutlinePlusCircle } from 'react-icons/ai';
-import formatErrors from '../utils';
 import { useSnackbar } from 'notistack';
 import { useEffect, useState } from 'react';
-import api from '../services/api';
 import { useNavigate } from 'react-router-dom';
+
+import api from '../services/api';
+import formatErrors from '../utils';
+
+import styled from 'styled-components';
 
 export default function HomePage() {
   const [transactions, setTransactions] = useState([]);
   const [user, setUser] = useState();
   const [total, setTotal] = useState(0);
+  const [formatedTotal, setFormatedTotal] = useState();
 
   const { enqueueSnackbar } = useSnackbar();
   const navigate = useNavigate();
@@ -26,8 +29,25 @@ export default function HomePage() {
         return acc - obj.value;
       }, 0);
 
+      let formatedCalcTotal;
+
+      if (calcTotal < 0) {
+        formatedCalcTotal = calcTotal
+          .toLocaleString('pt-BR', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+          })
+          .replace('-', '');
+      } else {
+        formatedCalcTotal = calcTotal.toLocaleString('pt-BR', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        });
+      }
+
       setUser(data.name);
       setTotal(calcTotal);
+      setFormatedTotal(formatedCalcTotal);
       setTransactions(data.transactions);
     } catch (error) {
       const errors = formatErrors(error);
@@ -75,37 +95,46 @@ export default function HomePage() {
 
       <TransactionsContainer>
         <ul>
-          {transactions?.map(transaction => (
-            <ListItemContainer key={transaction._id}>
-              <div>
-                <span>{transaction.date}</span>
-                <strong>{transaction.description}</strong>
-              </div>
-              <Value
-                color={transaction.type === 'entrada' ? 'positivo' : 'negativo'}
-              >
-                {transaction.value.toFixed(2).replace('.', ',')}
-              </Value>
-            </ListItemContainer>
-          ))}
+          {transactions?.map(transaction => {
+            const formatedValue = transaction.value.toLocaleString('pt-BR', {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2
+            });
+
+            return (
+              <ListItemContainer key={transaction._id}>
+                <div>
+                  <span>{transaction.date}</span>
+                  <strong>{transaction.description}</strong>
+                </div>
+                <Value
+                  color={
+                    transaction.type === 'entrada' ? 'positivo' : 'negativo'
+                  }
+                >
+                  {formatedValue}
+                </Value>
+              </ListItemContainer>
+            );
+          })}
         </ul>
 
         <article>
           <strong>Saldo</strong>
           <Value color={total >= 0 ? 'positivo' : 'negativo'}>
-            {total.toFixed(2).replace('.', ',').replace('-', '')}
+            {formatedTotal}
           </Value>
         </article>
       </TransactionsContainer>
 
       <ButtonsContainer>
-        <button>
+        <button onClick={() => navigate('/nova-transacao/entrada')}>
           <AiOutlinePlusCircle />
           <p>
             Nova <br /> entrada
           </p>
         </button>
-        <button>
+        <button onClick={() => navigate('/nova-transacao/saida')}>
           <AiOutlineMinusCircle />
           <p>
             Nova <br />
