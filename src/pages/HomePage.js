@@ -1,15 +1,18 @@
-import { BiExit } from 'react-icons/bi';
+import styled from 'styled-components';
+
 import { AiOutlineMinusCircle, AiOutlinePlusCircle } from 'react-icons/ai';
-import { useSnackbar } from 'notistack';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useSnackbar } from 'notistack';
+import { BiExit } from 'react-icons/bi';
 
 import api from '../services/api';
 import formatErrors from '../utils';
 
-import styled from 'styled-components';
+import Loading from '../components/Loading';
 
 export default function HomePage() {
+  const [isLoading, setIsLoading] = useState(false);
   const [transactions, setTransactions] = useState([]);
   const [user, setUser] = useState();
   const [total, setTotal] = useState(0);
@@ -19,6 +22,8 @@ export default function HomePage() {
   const navigate = useNavigate();
 
   async function handleLoadTransactions() {
+    setIsLoading(true);
+
     try {
       const { data } = await api.get('/transactions');
 
@@ -57,10 +62,14 @@ export default function HomePage() {
           variant: 'error'
         })
       );
+    } finally {
+      setIsLoading(false);
     }
   }
 
   async function handleLogout() {
+    setIsLoading(true);
+
     try {
       await api.delete('/session');
 
@@ -79,6 +88,8 @@ export default function HomePage() {
           variant: 'error'
         })
       );
+    } finally {
+      setIsLoading(false);
     }
   }
 
@@ -87,70 +98,77 @@ export default function HomePage() {
   }, []);
 
   return (
-    <HomeContainer>
-      <Header>
-        <h1>Olá, {user}</h1>
-        <BiExit onClick={handleLogout} />
-      </Header>
+    <>
+      {isLoading && <Loading />}
+      <HomeContainer>
+        <Header>
+          <h1>Olá, {user}</h1>
+          <BiExit onClick={handleLogout} />
+        </Header>
 
-      <TransactionsContainer>
-        <ul>
-          {transactions?.map(transaction => {
-            const formatedValue = transaction.value.toLocaleString('pt-BR', {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2
-            });
+        <TransactionsContainer>
+          <ul>
+            {transactions?.map(transaction => {
+              const formatedValue = transaction.value.toLocaleString('pt-BR', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+              });
 
-            return (
-              <ListItemContainer key={transaction._id}>
-                <div>
-                  <span>{transaction.date}</span>
-                  <strong>{transaction.description}</strong>
-                </div>
-                <Value
-                  color={
-                    transaction.type === 'entrada' ? 'positivo' : 'negativo'
-                  }
-                >
-                  {formatedValue}
-                </Value>
-              </ListItemContainer>
-            );
-          })}
-        </ul>
+              return (
+                <ListItemContainer key={transaction._id}>
+                  <div>
+                    <span>{transaction.date}</span>
+                    <strong>{transaction.description}</strong>
+                  </div>
+                  <Value
+                    color={
+                      transaction.type === 'entrada' ? 'positivo' : 'negativo'
+                    }
+                  >
+                    {formatedValue}
+                  </Value>
+                </ListItemContainer>
+              );
+            })}
+          </ul>
 
-        <article>
-          <strong>Saldo</strong>
-          <Value color={total >= 0 ? 'positivo' : 'negativo'}>
-            {formatedTotal}
-          </Value>
-        </article>
-      </TransactionsContainer>
+          <article>
+            <strong>Saldo</strong>
+            <Value color={total >= 0 ? 'positivo' : 'negativo'}>
+              {formatedTotal}
+            </Value>
+          </article>
+        </TransactionsContainer>
 
-      <ButtonsContainer>
-        <button onClick={() => navigate('/nova-transacao/entrada')}>
-          <AiOutlinePlusCircle />
-          <p>
-            Nova <br /> entrada
-          </p>
-        </button>
-        <button onClick={() => navigate('/nova-transacao/saida')}>
-          <AiOutlineMinusCircle />
-          <p>
-            Nova <br />
-            saída
-          </p>
-        </button>
-      </ButtonsContainer>
-    </HomeContainer>
+        <ButtonsContainer>
+          <button onClick={() => navigate('/nova-transacao/entrada')}>
+            <AiOutlinePlusCircle />
+            <p>
+              Nova <br /> entrada
+            </p>
+          </button>
+
+          <button onClick={() => navigate('/nova-transacao/saida')}>
+            <AiOutlineMinusCircle />
+            <p>
+              Nova <br />
+              saída
+            </p>
+          </button>
+        </ButtonsContainer>
+      </HomeContainer>
+    </>
   );
 }
 
 const HomeContainer = styled.div`
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 50px);
+  height: 100%;
+
+  overflow: hidden;
 `;
+
 const Header = styled.header`
   display: flex;
   align-items: center;
@@ -160,24 +178,36 @@ const Header = styled.header`
   font-size: 26px;
   color: white;
 `;
+
 const TransactionsContainer = styled.article`
   flex-grow: 1;
+  max-height: calc(100vh - 225px);
   background-color: #fff;
   color: #000;
   border-radius: 5px;
-  padding: 16px;
+  padding: 16px 0;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+
+  ul {
+    padding: 0 16px;
+    height: 100%;
+    overflow: auto;
+  }
+
   article {
+    padding: 10px 16px 0 16px;
     display: flex;
     justify-content: space-between;
+
     strong {
       font-weight: 700;
       text-transform: uppercase;
     }
   }
 `;
+
 const ButtonsContainer = styled.section`
   margin-top: 15px;
   margin-bottom: 0;
@@ -192,23 +222,27 @@ const ButtonsContainer = styled.section`
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+
     p {
       font-size: 18px;
+      font-weight: 700;
     }
   }
 `;
+
 const Value = styled.div`
   font-size: 16px;
   text-align: right;
   color: ${props => (props.color === 'positivo' ? 'green' : 'red')};
 `;
+
 const ListItemContainer = styled.li`
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 8px;
   color: #000000;
-  margin-right: 10px;
+
   div span {
     color: #c6c6c6;
     margin-right: 10px;

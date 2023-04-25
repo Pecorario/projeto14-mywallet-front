@@ -1,21 +1,28 @@
-import { useParams } from 'react-router-dom';
 import styled from 'styled-components';
+
 import { useNavigate } from 'react-router-dom';
 import { useSnackbar } from 'notistack';
-import formatErrors from '../utils';
-import api from '../services/api';
+import { useParams } from 'react-router-dom';
 import { useState } from 'react';
 
+import api from '../services/api';
+import formatErrors from '../utils';
+
+import Loading from '../components/Loading';
+
 export default function TransactionsPage() {
+  const [isLoading, setIsLoading] = useState(false);
   const [value, setValue] = useState('0,00');
   const [description, setDescription] = useState('');
 
   const { tipo: transactionType } = useParams();
   const { enqueueSnackbar } = useSnackbar();
+
   const navigate = useNavigate();
 
   async function handleSaveTransaction(e) {
     e.preventDefault();
+    setIsLoading(true);
 
     const formatedValue = Number(value.replace(',', '.'));
 
@@ -25,7 +32,7 @@ export default function TransactionsPage() {
         description
       });
 
-      enqueueSnackbar('Transação adicionada com sucesso!', {
+      enqueueSnackbar('Success!', {
         variant: 'success'
       });
 
@@ -38,6 +45,8 @@ export default function TransactionsPage() {
           variant: 'error'
         })
       );
+    } finally {
+      setIsLoading(false);
     }
   }
 
@@ -55,24 +64,27 @@ export default function TransactionsPage() {
   }
 
   return (
-    <TransactionsContainer>
-      <h1>Nova {transactionType}</h1>
-      <form onSubmit={handleSaveTransaction}>
-        <input
-          placeholder="Valor"
-          type="text"
-          value={`R$ ${value}`}
-          onChange={e => handleChange(e.target.value)}
-        />
-        <input
-          placeholder="Descrição"
-          type="text"
-          value={description}
-          onChange={e => setDescription(e.target.value)}
-        />
-        <button>Salvar {transactionType}</button>
-      </form>
-    </TransactionsContainer>
+    <>
+      {isLoading && <Loading />}
+      <TransactionsContainer>
+        <h1>Nova {transactionType}</h1>
+        <form onSubmit={handleSaveTransaction}>
+          <input
+            placeholder="Valor"
+            type="text"
+            value={`R$ ${value}`}
+            onChange={e => handleChange(e.target.value)}
+          />
+          <input
+            placeholder="Descrição"
+            type="text"
+            value={description}
+            onChange={e => setDescription(e.target.value)}
+          />
+          <button>Salvar {transactionType}</button>
+        </form>
+      </TransactionsContainer>
+    </>
   );
 }
 
