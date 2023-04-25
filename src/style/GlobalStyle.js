@@ -48,11 +48,11 @@ const GlobalStyle = createGlobalStyle`
     }
     a {
         font-weight: 700;
-        font-size: 15px;
+        font-size: 15px !important;
         line-height: 18px;
         color: white;
         text-decoration: none;
-        padding-top: 30px;
+        padding-top: 30px !important;
     }
 `;
 

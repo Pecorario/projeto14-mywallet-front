@@ -14,6 +14,7 @@ root.render(
   <React.StrictMode>
     <ResetStyle />
     <GlobalStyle />
+
     <BrowserRouter>
       <SnackbarProvider>
         <App />
